@@ -48,12 +48,6 @@ architecture testbench of tb_processor is
 	signal dmem_read_req, dmem_write_req : std_logic;
 	signal dmem_read_ack, dmem_write_ack : std_logic := '1';
 
-	-- Tohost/Fromhost:
-	signal tohost_data       : std_logic_vector(31 downto 0);
-	signal fromhost_data     : std_logic_vectoR(31 downto 0) := (others => '0');
-	signal tohost_write_en   : std_logic;
-	signal fromhost_write_en : std_logic := '0';
-
 	-- External interrupt input:
 	signal irq : std_logic_vector(7 downto 0) := (others => '0');
 
@@ -94,10 +88,6 @@ begin
 			dmem_read_ack => dmem_read_ack,
 			dmem_write_req => dmem_write_req,
 			dmem_write_ack => dmem_write_ack,
-			tohost_data => tohost_data,
-			tohost_write_en => tohost_write_en,
-			fromhost_data => fromhost_data,
-			fromhost_write_en => fromhost_write_en,
 			irq => irq
 		);
 
@@ -262,15 +252,6 @@ begin
 		reset <= '0';
 		wait for clk_period;
 
-		wait until tohost_write_en = '1';
-		wait for clk_period; -- Let the signal "settle", because of clock edges
-		if tohost_data = x"00000001" then
-			report "Success!" severity NOTE;
-		else
-			report "Failure in test " & integer'image(to_integer(shift_right(unsigned(tohost_data), 1))) & "!" severity NOTE;
-		end if;
-
-		simulation_finished <= true;
 		wait;
 	end process stimulus;
 

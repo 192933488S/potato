@@ -28,12 +28,6 @@ entity pp_potato is
 		-- Interrupts:
 		irq : in std_logic_vector(7 downto 0);
 
-		-- Host/Target interface:
-		fromhost_data    : in std_logic_vector(31 downto 0);
-		fromhost_updated : in std_logic;
-		tohost_data      : out std_logic_vector(31 downto 0);
-		tohost_updated   : out std_logic;
-
 		-- Wishbone interface:
 		wb_adr_out : out std_logic_vector(31 downto 0);
 		wb_sel_out : out std_logic_vector( 3 downto 0);
@@ -93,10 +87,6 @@ begin
 			dmem_read_ack => dmem_read_ack,
 			dmem_write_req => dmem_write_req,
 			dmem_write_ack => dmem_write_ack,
-			fromhost_data => fromhost_data,
-			fromhost_write_en => fromhost_updated,
-			tohost_data => tohost_data,
-			tohost_write_en => tohost_updated,
 			irq => irq
 		);
 

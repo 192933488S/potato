@@ -38,11 +38,6 @@ architecture testbench of tb_soc is
 	-- Interrupts:
 	signal irq : std_logic_vector(7 downto 0) := (others => '0');
 
-	-- HTIF:
-	signal fromhost_data, tohost_data : std_logic_vector(31 downto 0);
-	signal fromhost_updated : std_logic := '0';
-	signal tohost_updated : std_logic;
-
 	-- Instruction memory signals:
 	signal imem_adr_in : std_logic_vector(log2(IMEM_SIZE) - 1 downto 0);
 	signal imem_dat_in : std_logic_vector(31 downto 0);
@@ -105,10 +100,6 @@ begin
 			reset => processor_reset,
 			timer_clk => timer_clk,
 			irq => irq,
-			fromhost_data => fromhost_data,
-			fromhost_updated => fromhost_updated,
-			tohost_data => tohost_data,
-			tohost_updated => tohost_updated,
 			wb_adr_out => p_adr_out,
 			wb_sel_out => p_sel_out,
 			wb_cyc_out => p_cyc_out,
@@ -301,15 +292,6 @@ begin
 		wait until initialized;
 		processor_reset <= '0';
 
-		wait until tohost_updated = '1';
-		wait for clk_period; -- Let the signal "settle", because of stupid clock edges
-		if tohost_data = x"00000001" then
-			report "Success!" severity NOTE;
-		else
-			report "Failure in test " & integer'image(to_integer(shift_right(unsigned(tohost_data), 1))) & "!" severity NOTE;
-		end if;
-
-		simulation_finished <= true;
 		wait;
 	end process stimulus;
 
