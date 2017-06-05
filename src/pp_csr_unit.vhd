@@ -11,8 +11,7 @@ use work.pp_utilities.all;
 
 entity pp_csr_unit is
 	generic(
-		PROCESSOR_ID  : std_logic_vector(31 downto 0);
-		MTIME_DIVIDER : positive := 5 --! Divider for the clock driving the MTIME counter.
+		PROCESSOR_ID  : std_logic_vector(31 downto 0)
 	);
 	port(
 		clk       : in std_logic;
@@ -57,11 +56,6 @@ architecture behaviour of pp_csr_unit is
 	signal counter_cycle   : std_logic_vector(63 downto 0);
 	signal counter_instret : std_logic_vector(63 downto 0);
 
-	-- Machine time counter:
-	signal mtime_clock_counter : natural := 0;
-	signal counter_mtime       : std_logic_vector(31 downto 0);
-	signal mtime_compare       : std_logic_vector(31 downto 0);
-
 	-- Machine-mode registers:
 	signal mcause   : csr_exception_cause;
 	signal mbadaddr : std_logic_vector(31 downto 0);
@@ -88,38 +82,6 @@ begin
 
 	-- The two upper bits of the CSR address encodes the accessibility of the CSR:
 	read_writeable <= read_address(11 downto 10) /= b"11";
-
-	mtime_counter: process(clk)
-	begin
-		if rising_edge(clk) then
-			if reset = '1' then
-				mtime_clock_counter <= 0;
-				counter_mtime <= (others => '0');
-			else
-				if mtime_clock_counter = MTIME_DIVIDER - 1 then
-					mtime_clock_counter <= 0;
-					counter_mtime <= std_logic_vector(unsigned(counter_mtime) + 1);
-				else
-					mtime_clock_counter <= mtime_clock_counter + 1;
-				end if;
-			end if;
-		end if;
-	end process mtime_counter;
-
-	mtime_interrupt: process(clk)
-	begin
-		if rising_edge(clk) then
-			if reset = '1' then
-				timer_interrupt <= '0';
-			else
-				if write_mode /= CSR_WRITE_NONE and write_address = CSR_MTIMECMP then
-					timer_interrupt <= '0';
-				elsif counter_mtime = mtime_compare then
-					timer_interrupt <= '1';
-				end if;
-			end if;
-		end if;
-	end process mtime_interrupt;
 
 	write: process(clk)
 	begin
@@ -152,8 +114,6 @@ begin
 						--	mcause <= write_data_in(31) & write_data_in(4 downto 0);
 						when CSR_MTVEC => -- Exception vector address
 							mtvec <= write_data_in;
-						when CSR_MTIMECMP => -- Time compare register
-							mtime_compare <= write_data_in;
 						when CSR_MIE => -- Interrupt enable register:
 							mie <= write_data_in;
 						when CSR_MIP => -- Interrupt pending register:
@@ -211,12 +171,6 @@ begin
 						read_data_out <= mbadaddr;
 					when CSR_MCAUSE => -- Exception cause
 						read_data_out <= mcause(5) & (30 downto 5 => '0') & mcause(4 downto 0); --to_std_logic_vector(mcause);
-
-					-- Timers and counters:
-					when CSR_MTIME => -- Machine time counter register
-						read_data_out <= counter_mtime;
-					when CSR_MTIMECMP => -- Machine time compare register
-						read_data_out <= mtime_compare;
 
 					when CSR_TIME =>
 						read_data_out <= counter_time(31 downto 0);
